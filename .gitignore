@@ -1,0 +1,27 @@
+﻿# Python & Virtual Environment
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Variables & Secrets (Passwords, API Keys, DB URLs)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local Uploaded Files
+backend/uploads/
+
+# React / Node / Vite Build & Dependencies
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Logs & OS / Editor Files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
