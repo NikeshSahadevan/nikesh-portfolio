@@ -4,7 +4,7 @@ import './App.css';
 // ============================================================================
 // CONFIGURATION: FastAPI Backend Base URL & Default Theme Constants
 // ============================================================================
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const DEFAULT_SITE_SETTINGS = {
   status_text: 'Open to ERP & Full-Stack Opportunities',
@@ -35,6 +35,28 @@ const buildWhatsAppUrl = (rawNumber, firstName = 'Nikesh') => {
   if (!digits) return '';
   const message = encodeURIComponent(`Hi ${firstName}, I visited your portfolio and would like to connect.`);
   return `https://api.whatsapp.com/send?phone=${digits}&text=${message}`;
+};
+
+// Render multi-line / bullet-point text cleanly as bullet points
+const renderBulletList = (text) => {
+  if (!text) return null;
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length <= 1) {
+    const cleanedSingle = lines[0]?.replace(/^[•\-*▪►]+\s*/, '') || text;
+    return <p className="card-desc">{cleanedSingle}</p>;
+  }
+
+  return (
+    <ul className="exp-bullet-list">
+      {lines.map((line, idx) => (
+        <li key={idx}>{line.replace(/^[•\-*▪►]+\s*/, '')}</li>
+      ))}
+    </ul>
+  );
 };
 
 // Crisp Professional SVG Icons
@@ -70,6 +92,13 @@ const ExternalLinkIcon = () => (
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
     <polyline points="15 3 21 3 21 9" />
     <line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+);
+
+const LocationPinIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
   </svg>
 );
 
@@ -177,7 +206,7 @@ function App() {
         setSettingsForm(loadedSettings);
       }
     } catch {
-      setApiError('Unable to connect to backend server. Ensure FastAPI is running on port 8000.');
+      setApiError('Unable to connect to backend server. Ensure FastAPI is running.');
     } finally {
       setLoading(false);
     }
@@ -599,6 +628,7 @@ function App() {
 
   const formattedProjectCount = String(projects.length).padStart(2, '0');
   const whatsappLink = buildWhatsAppUrl(siteSettings.whatsapp_number, siteSettings.first_name);
+  const resolvedResumeUrl = formatExternalUrl(siteSettings.resume_url);
 
   return (
     <div className="app-wrapper">
@@ -843,10 +873,10 @@ function App() {
                     </div>
                     <div className="field-row">
                       <div className="field-group">
-                        <label>Location *</label>
+                        <label>Location (City, Country) *</label>
                         <input
                           type="text"
-                          placeholder="e.g., Muscat, Oman"
+                          placeholder="e.g., Muscat, Oman or Kochi, India"
                           value={newExp.location}
                           onChange={(e) => setNewExp({ ...newExp, location: e.target.value })}
                           required
@@ -864,10 +894,10 @@ function App() {
                       </div>
                     </div>
                     <div className="field-group">
-                      <label>Responsibilities *</label>
+                      <label>Responsibilities * (Paste bullet points or one point per line)</label>
                       <textarea
-                        rows="3"
-                        placeholder="Describe your key contributions..."
+                        rows="5"
+                        placeholder={"• Configured and customized Odoo ERP modules (Sales, Inventory, Accounting)\n• Coordinated B2B client onboarding and technical support workflows\n• Automated reporting dashboards using Python and SQL"}
                         value={newExp.description}
                         onChange={(e) => setNewExp({ ...newExp, description: e.target.value })}
                         required
@@ -902,7 +932,7 @@ function App() {
                           <div key={exp.id} className={`record-row ${editingExpId === exp.id ? 'editing-active' : ''}`}>
                             <div className="record-info">
                               <strong>#{exp.display_order} &bull; {exp.role}</strong>
-                              <span>{exp.company} &bull; {exp.duration}</span>
+                              <span>{exp.company} &bull; {exp.location} &bull; {exp.duration}</span>
                             </div>
                             <div className="row-actions">
                               <button
@@ -1154,11 +1184,11 @@ function App() {
                     {/* RESUME MANAGER */}
                     <div className="panel-card form-stack">
                       <h3>Resume / CV Manager (PDF / DOCX)</h3>
-                      {siteSettings.resume_url ? (
+                      {resolvedResumeUrl ? (
                         <div className="record-row">
                           <div className="record-info">
                             <strong>Current Resume Active</strong>
-                            <a href={siteSettings.resume_url} target="_blank" rel="noreferrer" className="inline-link">
+                            <a href={resolvedResumeUrl} target="_blank" rel="noreferrer" className="inline-link">
                               Open / Download Uploaded Resume &#8599;
                             </a>
                           </div>
@@ -1172,7 +1202,7 @@ function App() {
 
                       <form onSubmit={handleUploadResume} className="form-stack">
                         <div className="field-group">
-                          <label>{siteSettings.resume_url ? 'Replace with New Resume' : 'Upload Resume File'}</label>
+                          <label>{resolvedResumeUrl ? 'Replace with New Resume' : 'Upload Resume File'}</label>
                           <input
                             id="resume-file-input"
                             type="file"
@@ -1412,9 +1442,9 @@ function App() {
                   <ExternalLinkIcon />
                 </a>
               )}
-              {siteSettings.resume_url && (
+              {resolvedResumeUrl && (
                 <a
-                  href={siteSettings.resume_url}
+                  href={resolvedResumeUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="dock-btn resume-btn"
@@ -1511,7 +1541,7 @@ function App() {
             )}
           </section>
 
-          {/* WORK EXPERIENCE SECTION */}
+          {/* WORK EXPERIENCE SECTION WITH COMPANY, LOCATION & BULLET POINTS */}
           <section id="experience" className="section">
             <div className="section-header reveal">
               <div>
@@ -1528,13 +1558,21 @@ function App() {
                     <div className="exp-header">
                       <div>
                         <h3>{exp.role}</h3>
-                        <span className="company-name">{exp.company}</span>
+                        <div className="company-location-row">
+                          <span className="company-name">{exp.company}</span>
+                          {exp.location && (
+                            <span className="location-pill">
+                              <LocationPinIcon />
+                              <span>{exp.location}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="duration-badge">
-                        {exp.duration} &bull; {exp.location}
+                        {exp.duration}
                       </span>
                     </div>
-                    <p className="card-desc">{exp.description}</p>
+                    {renderBulletList(exp.description)}
                   </div>
                 </div>
               ))}
@@ -1790,8 +1828,8 @@ function App() {
               <span>WhatsApp</span>
             </a>
           )}
-          {siteSettings.resume_url && (
-            <a href={siteSettings.resume_url} target="_blank" rel="noreferrer" className="footer-icon-link">
+          {resolvedResumeUrl && (
+            <a href={resolvedResumeUrl} target="_blank" rel="noreferrer" className="footer-icon-link">
               <ResumeIcon />
               <span>Resume</span>
             </a>

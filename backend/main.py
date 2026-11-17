@@ -252,7 +252,7 @@ async def upload_resume(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(resume_file.file, buffer)
 
-    settings.resume_url = f"http://127.0.0.1:8000/uploads/resume/{safe_name}"
+    settings.resume_url = f"/uploads/resume/{safe_name}"
     db.commit()
     db.refresh(settings)
     return settings
