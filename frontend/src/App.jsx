@@ -198,35 +198,41 @@ function App() {
     }
   }, [siteSettings, settingsForm, isAdminView]);
 
-  // Fetch Public Portfolio Data & Site Settings
-  const fetchPublicData = async () => {
+  // Fetch Public Portfolio Data & Site Settings (with silent auto-retry for cold starts)
+const fetchPublicData = async (retryCount = 0) => {
+  if (retryCount === 0) {
     setLoading(true);
     setApiError('');
-    try {
-      const [projRes, expRes, certRes, setRes] = await Promise.all([
-        fetch(`${API_URL}/projects`),
-        fetch(`${API_URL}/experiences`),
-        fetch(`${API_URL}/certifications`),
-        fetch(`${API_URL}/settings`),
-      ]);
-      if (!projRes.ok || !expRes.ok || !certRes.ok) {
-        throw new Error('Failed to load portfolio data from server.');
-      }
-      setProjects(await projRes.json());
-      setExperiences(await expRes.json());
-      setCertifications(await certRes.json());
+  }
+  try {
+    const [projRes, expRes, certRes, setRes] = await Promise.all([
+      fetch(`${API_URL}/projects`),
+      fetch(`${API_URL}/experiences`),
+      fetch(`${API_URL}/certifications`),
+      fetch(`${API_URL}/settings`),
+    ]);
+    if (!projRes.ok || !expRes.ok || !certRes.ok) {
+      throw new Error('Failed to load portfolio data from server.');
+    }
+    setProjects(await projRes.json());
+    setExperiences(await expRes.json());
+    setCertifications(await certRes.json());
 
-      if (setRes.ok) {
-        const loadedSettings = await setRes.json();
-        setSiteSettings(loadedSettings);
-        setSettingsForm(loadedSettings);
-      }
-    } catch {
-      setApiError('Unable to connect to backend server. Ensure FastAPI is running.');
-    } finally {
+    if (setRes.ok) {
+      const loadedSettings = await setRes.json();
+      setSiteSettings(loadedSettings);
+      setSettingsForm(loadedSettings);
+    }
+    setLoading(false);
+  } catch {
+    if (retryCount < 3) {
+      setTimeout(() => fetchPublicData(retryCount + 1), 5000);
+    } else {
+      setApiError('Server is currently waking up. Please refresh the page in a few seconds.');
       setLoading(false);
     }
-  };
+  }
+};
 
   // Fetch Protected Inbox Messages
   const fetchMessages = async (activeToken = token) => {
