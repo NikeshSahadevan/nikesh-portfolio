@@ -281,6 +281,10 @@ def reset_settings(db: Session = Depends(get_db), token: str = Depends(verify_ad
     return settings
 
 # ==================== PROJECTS CRUD ====================
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/projects")
 def get_projects(db: Session = Depends(get_db)):
     return db.query(models.Project).order_by(models.Project.id.desc()).all()
