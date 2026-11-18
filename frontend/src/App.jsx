@@ -102,6 +102,21 @@ const LocationPinIcon = () => (
   </svg>
 );
 
+const MenuIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 const THEME_PRESETS = [
   { name: 'Default Midnight', bg_color: '#090d16', accent_color: '#38bdf8', accent_secondary: '#818cf8' },
   { name: 'Emerald Slate', bg_color: '#071311', accent_color: '#34d399', accent_secondary: '#06b6d4' },
@@ -123,6 +138,7 @@ function App() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [previewCert, setPreviewCert] = useState(null);
   const [activeNav, setActiveNav] = useState('about');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 3. Admin Authentication & Dashboard States
   const [token, setToken] = useState(() => localStorage.getItem('admin_token') || '');
@@ -277,6 +293,7 @@ function App() {
       setAdminUsername(data.username);
       setShowLoginModal(false);
       setIsAdminView(true);
+      setMobileMenuOpen(false);
       setLoginForm({ username: '', password: '' });
       fetchMessages(data.token);
     } catch {
@@ -297,6 +314,7 @@ function App() {
     localStorage.removeItem('admin_user');
     setToken('');
     setIsAdminView(false);
+    setMobileMenuOpen(false);
     setMessages([]);
   };
 
@@ -621,6 +639,7 @@ function App() {
   const scrollToSection = (id) => {
     setIsAdminView(false);
     setActiveNav(id);
+    setMobileMenuOpen(false);
     setTimeout(() => {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
@@ -635,7 +654,7 @@ function App() {
       <div className="bg-glow glow-1"></div>
       <div className="bg-glow glow-2"></div>
 
-      {/* NAVBAR */}
+      {/* NAVBAR WITH MOBILE HAMBURGER MENU */}
       <nav className="navbar">
         <div className="nav-inner">
           <span className="logo" onClick={() => scrollToSection('about')}>
@@ -643,7 +662,20 @@ function App() {
             {siteSettings.last_name?.charAt(0) || 'S'}
             <span className="dot">.</span>
           </span>
-          <div className="nav-links">
+
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          >
+            {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
+
+          {/* Desktop & Collapsible Mobile Navigation Links */}
+          <div className={`nav-links ${mobileMenuOpen ? 'open' : ''}`}>
             {['about', 'projects', 'experience', 'certifications', 'contact'].map((item) => (
               <button
                 key={item}
@@ -659,6 +691,7 @@ function App() {
                 onClick={() => {
                   setSettingsForm(siteSettings);
                   setIsAdminView(!isAdminView);
+                  setMobileMenuOpen(false);
                 }}
               >
                 {isAdminView ? '← View Portfolio' : 'Dashboard'}
@@ -670,6 +703,7 @@ function App() {
                   setLoginForm({ username: '', password: '' });
                   setLoginError('');
                   setShowLoginModal(true);
+                  setMobileMenuOpen(false);
                 }}
               >
                 Admin
